@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SMM Panel</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>SMM PANEL</h1>
+        <p>Social Media Marketing Services</p>
+    </header>
+
+    <main>
+
+        <section class="order-box">
+
+            <h2>Place Your Order</h2>
+
+            <label>Social Media Platform</label>
+            <select id="platform">
+                <option value="">Select Platform</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Facebook">Facebook</option>
+                <option value="YouTube">YouTube</option>
+            </select>
+
+            <label>Service</label>
+            <select id="service">
+                <option value="">Select Service</option>
+                <option value="Followers">Followers</option>
+                <option value="Likes">Likes</option>
+                <option value="Views">Views</option>
+                <option value="Comments">Comments</option>
+            </select>
+
+            <label>Quantity</label>
+            <input type="number" id="quantity" placeholder="Enter quantity">
+
+            <label>Link</label>
+            <input type="text" id="link" placeholder="Paste your social media link">
+
+            <div class="total">
+                <p>Total Price</p>
+                <h2 id="total">KSh 0</h2>
+            </div>
+
+            <button onclick="placeOrder()">Continue</button>
+          <div id="payment-section" class="payment-section">
+    <h3>Payment</h3>
+
+    <p>Pay securely using M-Pesa</p>
+
+    <input
+        type="tel"
+        id="phone"
+        placeholder="M-Pesa number (07XXXXXXXX)"
+    >
+
+    <button onclick="payWithMpesa()">
+        Pay with M-Pesa
+    </button>
+          </div>
+
+            <p id="message"></p>
+
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
