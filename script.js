@@ -1,13 +1,28 @@
-constconst quantityInput = document.getElementById("quantity");
+const quantityInput = document.getElementById("quantity");
 const serviceInput = document.getElementById("service");
 const totalDisplay = document.getElementById("total");
 
+// Ensure elements exist before adding listeners
+if (quantityInput && serviceInput && totalDisplay) {
+    serviceInput.addEventListener("change", calculatePrice);
+    quantityInput.addEventListener("input", calculatePrice);
+    
+    // Call calculatePrice once on load to initialize the total
+    calculatePrice();
+}
+
+/**
+ * Calculates and updates the total price based on service and quantity.
+ */
 function calculatePrice() {
+    if (!quantityInput || !serviceInput || !totalDisplay) return;
+
     const quantity = Number(quantityInput.value);
     const service = serviceInput.value;
 
     let pricePer1000 = 0;
 
+    // Define pricing structure
     if (service === "Followers") {
         pricePer1000 = 150;
     } else if (service === "Likes") {
@@ -18,14 +33,21 @@ function calculatePrice() {
         pricePer1000 = 200;
     }
 
+    // Handle invalid or empty input
+    if (isNaN(quantity) || quantity <= 0) {
+        totalDisplay.textContent = "KSh 0.00";
+        return;
+    }
+
     const total = (quantity / 1000) * pricePer1000;
 
+    // Update the display with formatted currency
     totalDisplay.textContent = "KSh " + total.toFixed(2);
 }
 
-serviceInput.addEventListener("change", calculatePrice);
-quantityInput.addEventListener("input", calculatePrice);
-
+/**
+ * Handles placing the initial order and showing the payment section.
+ */
 function placeOrder() {
     const platform = document.getElementById("platform").value;
     const service = document.getElementById("service").value;
@@ -44,6 +66,7 @@ function placeOrder() {
         return;
     }
 
+    // Ensure price is calculated before proceeding
     calculatePrice();
 
     paymentSection.style.display = "block";
@@ -55,10 +78,18 @@ function placeOrder() {
     message.textContent = "Order created. Enter your M-Pesa number below.";
 }
 
+/**
+ * Handles initiating the M-Pesa STK Push payment via Vercel backend.
+ */
 async function payWithMpesa() {
     const phoneInput = document.getElementById("phone").value.trim();
     const totalText = document.getElementById("total").textContent;
     const message = document.getElementById("message");
+
+    if (!totalText || totalText === "KSh 0.00") {
+        alert("Please calculate a valid total first.");
+        return;
+    }
 
     // Extract raw numeric amount from "KSh 150.00"
     const amount = Math.round(Number(totalText.replace(/[^0-9.]/g, '')));
@@ -93,31 +124,19 @@ async function payWithMpesa() {
             })
         });
 
-        // 1. Check if the response was successful (status 200)
-        if (!response.ok) {
-            // The server returned an error (likely a deployment issue or bad credentials)
-            console.error("Vercel Server Error:", response.status, response.statusText);
-            message.textContent = "Vercel API error. Check logs.";
-            alert("Vercel API returned an error (" + response.status + "). Please check your Vercel logs.");
-            return;
-        }
-
-        // 2. Try to parse the response as JSON
         const data = await response.json();
 
-        // 3. Check for specific M-Pesa error codes
-        if (data.ResponseCode === "0" || data.ResponseCode === 0) {
+        if (response.ok && (data.ResponseCode === "0" || data.ResponseCode === 0)) {
             message.textContent = "STK Push sent! Please enter your M-Pesa PIN on your phone.";
             alert("Check your phone for the M-Pesa PIN prompt.");
         } else {
             const errDetails = data.errorMessage || data.error?.errorMessage || data.error || "Could not trigger STK push.";
-            message.textContent = "M-Pesa payment failed: " + errDetails;
-            alert("M-Pesa Error: " + errDetails);
+            message.textContent = "Payment failed: " + errDetails;
+            alert("Payment Error: " + errDetails);
         }
     } catch (error) {
-        // If the response wasn't JSON (e.g., an HTML error page), we get the "Unexpected token" error.
-        console.error("Network or JSON error:", error);
-        message.textContent = "Server returned invalid data. Check Vercel logs.";
-        alert("Vercel API is returning non-JSON data. This means the deployment is broken or your keys are incorrect. Check Vercel Logs immediately.");
+        console.error("Fetch error:", error);
+        message.textContent = "Network error. Try again.";
+        alert("Network error: Failed to connect to payment server.");
     }
-                }
+}
