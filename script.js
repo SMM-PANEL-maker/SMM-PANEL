@@ -1,4 +1,4 @@
-const quantityInput = document.getElementById("quantity");
+constconst quantityInput = document.getElementById("quantity");
 const serviceInput = document.getElementById("service");
 const totalDisplay = document.getElementById("total");
 
@@ -93,19 +93,31 @@ async function payWithMpesa() {
             })
         });
 
+        // 1. Check if the response was successful (status 200)
+        if (!response.ok) {
+            // The server returned an error (likely a deployment issue or bad credentials)
+            console.error("Vercel Server Error:", response.status, response.statusText);
+            message.textContent = "Vercel API error. Check logs.";
+            alert("Vercel API returned an error (" + response.status + "). Please check your Vercel logs.");
+            return;
+        }
+
+        // 2. Try to parse the response as JSON
         const data = await response.json();
 
-        if (response.ok && (data.ResponseCode === "0" || data.ResponseCode === 0)) {
+        // 3. Check for specific M-Pesa error codes
+        if (data.ResponseCode === "0" || data.ResponseCode === 0) {
             message.textContent = "STK Push sent! Please enter your M-Pesa PIN on your phone.";
             alert("Check your phone for the M-Pesa PIN prompt.");
         } else {
             const errDetails = data.errorMessage || data.error?.errorMessage || data.error || "Could not trigger STK push.";
-            message.textContent = "Payment failed: " + errDetails;
-            alert("Payment Error: " + errDetails);
+            message.textContent = "M-Pesa payment failed: " + errDetails;
+            alert("M-Pesa Error: " + errDetails);
         }
     } catch (error) {
-        console.error("Fetch error:", error);
-        message.textContent = "Network error. Check Vercel logs or network.";
-        alert("Network error: " + error.message);
+        // If the response wasn't JSON (e.g., an HTML error page), we get the "Unexpected token" error.
+        console.error("Network or JSON error:", error);
+        message.textContent = "Server returned invalid data. Check Vercel logs.";
+        alert("Vercel API is returning non-JSON data. This means the deployment is broken or your keys are incorrect. Check Vercel Logs immediately.");
     }
-}
+                }
