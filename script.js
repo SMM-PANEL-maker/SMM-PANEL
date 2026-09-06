@@ -56,12 +56,12 @@ function placeOrder() {
 }
 
 async function payWithMpesa() {
-    const phoneInput = document.getElementById("phone").value;
+    const phoneInput = document.getElementById("phone").value.trim();
     const totalText = document.getElementById("total").textContent;
     const message = document.getElementById("message");
 
     // Extract raw numeric amount from "KSh 150.00"
-    const amount = Number(totalText.replace(/[^0-9.]/g, ''));
+    const amount = Math.round(Number(totalText.replace(/[^0-9.]/g, '')));
 
     if (!phoneInput) {
         alert("Please enter your M-Pesa number.");
@@ -95,16 +95,17 @@ async function payWithMpesa() {
 
         const data = await response.json();
 
-        if (response.ok && data.ResponseCode === "0") {
+        if (response.ok && (data.ResponseCode === "0" || data.ResponseCode === 0)) {
             message.textContent = "STK Push sent! Please enter your M-Pesa PIN on your phone.";
             alert("Check your phone for the M-Pesa PIN prompt.");
         } else {
-            message.textContent = "Payment failed to initiate.";
-            alert("Payment Error: " + (data.errorMessage || data.error?.errorMessage || "Could not trigger STK push."));
+            const errDetails = data.errorMessage || data.error?.errorMessage || data.error || "Could not trigger STK push.";
+            message.textContent = "Payment failed: " + errDetails;
+            alert("Payment Error: " + errDetails);
         }
     } catch (error) {
         console.error("Fetch error:", error);
-        message.textContent = "Network error. Try again.";
-        alert("Network error: Failed to connect to payment server.");
+        message.textContent = "Network error. Check Vercel logs or network.";
+        alert("Network error: " + error.message);
     }
 }
