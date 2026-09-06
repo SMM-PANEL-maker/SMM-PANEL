@@ -80,7 +80,7 @@ async function payWithMpesa() {
         return;
     }
 
-    // Completely strip +, spaces, hyphens, and non-numeric characters
+    // Strip +, spaces, hyphens, and non-numeric characters
     let formattedPhone = phoneInput.replace(/[^0-9]/g, '');
 
     // Convert 07... or 01... into 2547... or 2541...
@@ -88,7 +88,6 @@ async function payWithMpesa() {
         formattedPhone = '254' + formattedPhone.substring(1);
     }
 
-    // Ensure valid length for Kenyan phone numbers (254XXXXXXXXX -> 12 digits)
     if (formattedPhone.length !== 12 || !formattedPhone.startsWith('254')) {
         alert("Please enter a valid Kenyan phone number (e.g., 0712345678 or 0112345678).");
         return;
@@ -108,26 +107,19 @@ async function payWithMpesa() {
             })
         });
 
-        if (!response.ok) {
-            console.error("HTTP Error:", response.status, response.statusText);
-            message.textContent = "Failed to connect to backend.";
-            alert("Connection error (" + response.status + "): Ensure /api/stkpush exists on Vercel.");
-            return;
-        }
-
         const data = await response.json();
 
-        if (data.ResponseCode === "0" || data.ResponseCode === 0) {
+        if (response.ok && (data.ResponseCode === "0" || data.ResponseCode === 0)) {
             message.textContent = "STK Push sent! Enter your M-Pesa PIN on your phone.";
             alert("Check your phone for the M-Pesa PIN prompt.");
         } else {
             const errDetails = data.errorMessage || data.error?.errorMessage || data.error || "Could not trigger STK push.";
             message.textContent = "Payment failed: " + errDetails;
-            alert("M-Pesa Error: " + errDetails);
+            alert("Payment Error: " + errDetails);
         }
     } catch (error) {
         console.error("Fetch Error:", error);
         message.textContent = "Network error. Try again.";
         alert("Network error: " + error.message);
     }
-}
+              }
