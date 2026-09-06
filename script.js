@@ -2,18 +2,12 @@ const quantityInput = document.getElementById("quantity");
 const serviceInput = document.getElementById("service");
 const totalDisplay = document.getElementById("total");
 
-// Ensure elements exist before adding listeners
 if (quantityInput && serviceInput && totalDisplay) {
     serviceInput.addEventListener("change", calculatePrice);
     quantityInput.addEventListener("input", calculatePrice);
-    
-    // Call calculatePrice once on load to initialize the total
     calculatePrice();
 }
 
-/**
- * Calculates and updates the total price based on service and quantity.
- */
 function calculatePrice() {
     if (!quantityInput || !serviceInput || !totalDisplay) return;
 
@@ -22,7 +16,6 @@ function calculatePrice() {
 
     let pricePer1000 = 0;
 
-    // Define pricing structure
     if (service === "Followers") {
         pricePer1000 = 150;
     } else if (service === "Likes") {
@@ -33,21 +26,15 @@ function calculatePrice() {
         pricePer1000 = 200;
     }
 
-    // Handle invalid or empty input
     if (isNaN(quantity) || quantity <= 0) {
         totalDisplay.textContent = "KSh 0.00";
         return;
     }
 
     const total = (quantity / 1000) * pricePer1000;
-
-    // Update the display with formatted currency
     totalDisplay.textContent = "KSh " + total.toFixed(2);
 }
 
-/**
- * Handles placing the initial order and showing the payment section.
- */
 function placeOrder() {
     const platform = document.getElementById("platform").value;
     const service = document.getElementById("service").value;
@@ -66,11 +53,9 @@ function placeOrder() {
         return;
     }
 
-    // Ensure price is calculated before proceeding
     calculatePrice();
 
     paymentSection.style.display = "block";
-
     paymentSection.scrollIntoView({
         behavior: "smooth"
     });
@@ -78,20 +63,11 @@ function placeOrder() {
     message.textContent = "Order created. Enter your M-Pesa number below.";
 }
 
-/**
- * Handles initiating the M-Pesa STK Push payment via Vercel backend.
- */
 async function payWithMpesa() {
     const phoneInput = document.getElementById("phone").value.trim();
     const totalText = document.getElementById("total").textContent;
     const message = document.getElementById("message");
 
-    if (!totalText || totalText === "KSh 0.00") {
-        alert("Please calculate a valid total first.");
-        return;
-    }
-
-    // Extract raw numeric amount from "KSh 150.00"
     const amount = Math.round(Number(totalText.replace(/[^0-9.]/g, '')));
 
     if (!phoneInput) {
@@ -104,10 +80,18 @@ async function payWithMpesa() {
         return;
     }
 
-    // Convert 07... or 01... into 2547... or 2541... format
+    // Completely strip +, spaces, hyphens, and non-numeric characters
     let formattedPhone = phoneInput.replace(/[^0-9]/g, '');
+
+    // Convert 07... or 01... into 2547... or 2541...
     if (formattedPhone.startsWith('0')) {
         formattedPhone = '254' + formattedPhone.substring(1);
+    }
+
+    // Ensure valid length for Kenyan phone numbers (254XXXXXXXXX -> 12 digits)
+    if (formattedPhone.length !== 12 || !formattedPhone.startsWith('254')) {
+        alert("Please enter a valid Kenyan phone number (e.g., 0712345678 or 0112345678).");
+        return;
     }
 
     message.textContent = "Sending M-Pesa prompt to your phone...";
@@ -124,19 +108,26 @@ async function payWithMpesa() {
             })
         });
 
+        if (!response.ok) {
+            console.error("HTTP Error:", response.status, response.statusText);
+            message.textContent = "Failed to connect to backend.";
+            alert("Connection error (" + response.status + "): Ensure /api/stkpush exists on Vercel.");
+            return;
+        }
+
         const data = await response.json();
 
-        if (response.ok && (data.ResponseCode === "0" || data.ResponseCode === 0)) {
-            message.textContent = "STK Push sent! Please enter your M-Pesa PIN on your phone.";
+        if (data.ResponseCode === "0" || data.ResponseCode === 0) {
+            message.textContent = "STK Push sent! Enter your M-Pesa PIN on your phone.";
             alert("Check your phone for the M-Pesa PIN prompt.");
         } else {
             const errDetails = data.errorMessage || data.error?.errorMessage || data.error || "Could not trigger STK push.";
             message.textContent = "Payment failed: " + errDetails;
-            alert("Payment Error: " + errDetails);
+            alert("M-Pesa Error: " + errDetails);
         }
     } catch (error) {
-        console.error("Fetch error:", error);
+        console.error("Fetch Error:", error);
         message.textContent = "Network error. Try again.";
-        alert("Network error: Failed to connect to payment server.");
+        alert("Network error: " + error.message);
     }
 }
